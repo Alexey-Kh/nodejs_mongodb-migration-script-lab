@@ -32,29 +32,28 @@ const generateTasksArray = (dataArray, dbCollection) => {
 const validateInputArg = () => {
   let input = process.argv[2]
   if (!isNaN(input) & input > 0 ){
+    console.log(`Script will asynchronously insert ${input} objects at a time.`)
     return input
   }
   throw Error("Invalid input CLI argument: please provide a number with value > 0.")
 }
 
 mongodb.MongoClient.connect(url)
-  .then((client)=>{
+  .then(client => {
     const db = client.db('edx-course-db')
-    db.dropCollection('mongodb-migration-node-script').catch(e=>console.log('No need to drop collection.')) // Drop collection for lab purpose.
+    db.dropCollection('mongodb-migration-node-script').catch(e=>console.log("Collection doesn't exist yet.")) // Drop collection for lab purpose.
     const collection = db.collection('mongodb-migration-node-script')
     mergeCustomerData()
-      .then((dataArray)=>{
+      .then(dataArray => {
         return generateTasksArray(dataArray, collection)
       })
       .then(tasksArray => async.parallelLimit(tasksArray, validateInputArg()))
-      .then(res => console.log(res.length))
+      .then(res => console.log(`Successfully inserted ${res.length} objects.`))
       .catch(err => console.error(err))
       .finally(()=>{
         client.close()
         console.log("Disconnected from the database.")
-        console.log('Time taken for execution: ' + (new Date()-startDate))
+        console.log(`Time taken for execution: ${new Date()-startDate}`)
       })
   })
-    .catch(err => console.error(err))
-
-// - Think of reading file through data stream
+  .catch(err => console.error(err))
